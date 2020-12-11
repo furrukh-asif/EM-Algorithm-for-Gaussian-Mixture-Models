@@ -16,12 +16,13 @@ df_f = data_frame[data_frame.Gender.eq('Female')]
 
 # Calculating Mean and SD for individual distributions
 
+print("Original Parameters")
 mu_female = df_f["Height"].mean()
 mu_male = df_m["Height"].mean()
 print(mu_female, mu_male)
 std_female = df_f["Height"].std()
 std_male = df_m["Height"].std()
-print(std_female, std_male)
+print(std_female**2, std_male**2)
 
 
 def pdf(data, mean: float, variance: float):
@@ -30,12 +31,16 @@ def pdf(data, mean: float, variance: float):
   s2 = np.exp(-(np.square(data - mean)/(2*variance)))
   return s1 * s2
 
+
+# Plotting the Histogram
 data = np.array(data_frame["Height"])
 count, binsm, ignored = pyplot.hist(df_m["Height"], bins=40, density=True, color="navy", label="Male")
 countf, binsf, ignoredf = pyplot.hist(df_f["Height"], bins=40, density=True, color = "red", label="Female")
 pyplot.legend()
 pyplot.savefig("Histogram")
 pyplot.show()
+
+# Plotting the True pdfs
 bins = np.linspace(np.min(data),np.max(data),100)
 pyplot.xlabel("$height$")
 pyplot.ylabel("pdf")
@@ -47,6 +52,7 @@ pyplot.legend()
 pyplot.savefig("Original pdfs")
 pyplot.show()
 
+# Plotting the data points without gender information
 pyplot.scatter(data, [0.005] * len(data), color='purple', marker=2, label="Train Data")
 pyplot.legend()
 pyplot.savefig("Data without Gender")
@@ -58,16 +64,20 @@ k = 2
 means_est = np.random.choice(data, k)
 #Two random values picked between 0 and 1 as the initial estimates for the gaussian variances
 variances_est = np.random.random_sample(size=k)
+for i in range(k):
+    variances_est[i] *= 6
 #Initial probability of a datapoint belonging to a particular Gaussian (equal)
 probs_est = np.ones((k))/k
 
 iteration_no = 0
-epsilon = 0.001
+epsilon = 0.01
 
+print("Intial Estimates")
 print(means_est)
 print(variances_est)
+
 for j in range(100):
-    prev_est = deepcopy(means_est)
+    prev_means_est = deepcopy(means_est)
     #Plotting
     bins = np.linspace(np.min(data),np.max(data),100)
     pyplot.xlabel("$x$")
@@ -81,12 +91,13 @@ for j in range(100):
     pyplot.legend()
     pyplot.savefig("./Iterations/Iteration_{0:02d}".format(j))
     pyplot.show()
+
     #Expectation Step
 
     #Calculating the pdf of each datapoint for each cluster using the estimated values for mean and variance
     likelihood = []
     for i in range(k):
-        likelihood.append(pdf(data, means_est[i], np.sqrt(variances_est[i])))
+        likelihood.append(pdf(data, means_est[i], variances_est[i]))
     likelihood = np.array(likelihood)
 
     #Calculate the likelihood of each datapoint belonging to a cluster k (using Bayes Theorem)
@@ -107,13 +118,13 @@ for j in range(100):
     #Check for termination
     check = True
     for i in range(k):
-        if abs(means_est[i] - prev_est[i]) > epsilon:
+        if abs(means_est[i] - prev_means_est[i]) > epsilon:
             check = False
     if check:
         break
 
 
-
+print("EM Estimates")
 print(means_est)
 print(variances_est)
 
